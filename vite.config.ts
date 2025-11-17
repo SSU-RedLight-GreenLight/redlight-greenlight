@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
+  base: '/redlight_greenlight/',
   server: {
     port: 3000,
   },
