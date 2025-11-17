@@ -11,7 +11,6 @@ interface GameData {
   timeLeft: number; // 남은 시간 (초)
   isRedLight: boolean; // 빨간불(뒤돌아봄) 여부
   subtitle: string; // 현재 자막 ("무", "무궁화...")
-  isPlayerMoving: boolean; // (내부용) 현재 플레이어가 키를 누르고 있는지
 }
 
 let gameData: GameData = {
@@ -20,7 +19,6 @@ let gameData: GameData = {
   timeLeft: 60,
   isRedLight: false,
   subtitle: "",
-  isPlayerMoving: false,
 };
 
 /* ---------------------------------
@@ -37,10 +35,11 @@ let lastSecondUpdate: number = 0; // 마지막 초 업데이트 시각
 let redLightStartTime: number = 0; // 빨간불 시작 시각
 let greenLightStartTime: number = 0; // 초록불 시작 시각
 let currentPhase: "green" | "red" = "green"; // 현재 신호등 상태
+let spacePressed: boolean = false; // 스페이스바가 현재 눌린 상태인지 추적
 
 const GREEN_LIGHT_DURATION = 3000; // 초록불 지속 시간 (ms)
 const RED_LIGHT_DURATION = 2000; // 빨간불 지속 시간 (ms)
-const MOVE_SPEED = 0.5; // 이동 속도 (m/frame)
+const MOVE_DISTANCE_PER_PRESS = 0.5; // 한 번 누를 때마다 이동하는 거리 (m) - 50m / 100회 = 0.5m
 
 const sketch = (p: p5) => {
   /* ---------------------------------
@@ -77,6 +76,7 @@ const sketch = (p: p5) => {
   p.keyReleased = () => {
     B_handleKeyRelease();
   };
+
 
   /* =================================
    * [A] 이영애 함수들
@@ -159,7 +159,12 @@ const sketch = (p: p5) => {
   function B_handleKeyPress() {
     // 스페이스바 처리
     if (p.keyCode === 32) {
-      // 스페이스바
+      // 이미 눌린 상태면 무시 (중복 입력 방지)
+      if (spacePressed) {
+        return;
+      }
+      spacePressed = true;
+
       if (gameData.currentScene === "START") {
         // 게임 시작
         gameData.currentScene = "PLAYING";
@@ -169,16 +174,21 @@ const sketch = (p: p5) => {
         gameData.isRedLight = false;
         gameData.subtitle = "";
       } else if (gameData.currentScene === "PLAYING") {
-        // 플레이어 이동 시작
-        gameData.isPlayerMoving = true;
+        // 초록불일 때만 이동 가능
+        if (!gameData.isRedLight) {
+          gameData.distance -= MOVE_DISTANCE_PER_PRESS;
+        } else {
+          // 빨간불에 움직이면 즉시 잡힘
+          gameData.currentScene = "LOSE_CAUGHT";
+        }
       }
     }
   }
 
   function B_handleKeyRelease() {
-    // 스페이스바를 뗌
+    // 스페이스바를 뗐을 때 플래그 해제
     if (p.keyCode === 32) {
-      gameData.isPlayerMoving = false;
+      spacePressed = false;
     }
   }
 
@@ -230,17 +240,6 @@ const sketch = (p: p5) => {
     }
 
     // 3. 판정 로직
-    // 이동 처리
-    if (gameData.isPlayerMoving && !gameData.isRedLight) {
-      gameData.distance -= MOVE_SPEED;
-    }
-
-    // 잡힘 판정
-    if (gameData.isPlayerMoving && gameData.isRedLight) {
-      gameData.currentScene = "LOSE_CAUGHT";
-      gameData.isPlayerMoving = false;
-    }
-
     // 시간 초과 판정
     if (gameData.timeLeft <= 0) {
       gameData.currentScene = "LOSE_TIME";
