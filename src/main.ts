@@ -41,7 +41,11 @@ let greenLightStartTime: number = 0; // 초록불 시작 시각
 let currentPhase: "green" | "red" = "green"; // 현재 신호등 상태
 let spacePressed: boolean = false; // 스페이스바가 현재 눌린 상태인지 추적
 
-const GREEN_LIGHT_DURATION = 3000; // 초록불 지속 시간 (ms)
+// 음성 파일 객체
+let voiceAudio: HTMLAudioElement | null = null;
+let isVoicePlaying: boolean = false;
+
+const GREEN_LIGHT_DURATION = 3000; // 초록불 지속 시간 (ms) - 음성 재생 시에는 사용하지 않음
 const RED_LIGHT_DURATION = 2000; // 빨간불 지속 시간 (ms)
 const MOVE_DISTANCE_PER_PRESS = 0.5; // 한 번 누를 때마다 이동하는 거리 (m) - 50m / 100회 = 0.5m
 
@@ -99,6 +103,20 @@ const sketch = (p: p5) => {
         console.error("❌ 빨간불 이미지 2 로드 실패:", err);
       }
     );
+
+    // 음성 파일 로드
+    voiceAudio = new Audio(`${import.meta.env.BASE_URL}assets/voice_1ju.m4a`);
+    voiceAudio.addEventListener("ended", () => {
+      console.log("✅ 음성 재생 완료 - 빨간불로 전환");
+      isVoicePlaying = false;
+      currentPhase = "red";
+      redLightStartTime = p.millis();
+      gameData.isRedLight = true;
+      gameData.subtitle = "!!!";
+      // 빨간불로 전환될 때 랜덤으로 이미지 선택 (1 또는 2)
+      currentRedImage = p.random() < 0.5 ? 1 : 2;
+    });
+    console.log("✅ 음성 파일 로드 완료");
   };
 
   /* ---------------------------------
@@ -223,6 +241,13 @@ const sketch = (p: p5) => {
         currentPhase = "green";
         gameData.isRedLight = false;
         gameData.subtitle = "";
+        // 음성 재생 시작
+        if (voiceAudio && !isVoicePlaying) {
+          voiceAudio.currentTime = 0; // 처음부터 재생
+          voiceAudio.play();
+          isVoicePlaying = true;
+          console.log("✅ 음성 재생 시작 (게임 시작)");
+        }
       } else if (gameData.currentScene === "PLAYING") {
         // 초록불일 때만 이동 가능
         if (!gameData.isRedLight) {
@@ -247,32 +272,9 @@ const sketch = (p: p5) => {
 
     // 1. 타이머 로직: 신호등 전환
     if (currentPhase === "green") {
-      const greenElapsed = currentTime - greenLightStartTime;
-
-      // 자막 업데이트 (초록불 동안)
-      if (greenElapsed < 500) {
-        gameData.subtitle = "무";
-      } else if (greenElapsed < 1000) {
-        gameData.subtitle = "무궁";
-      } else if (greenElapsed < 1500) {
-        gameData.subtitle = "무궁화";
-      } else if (greenElapsed < 2000) {
-        gameData.subtitle = "무궁화 꽃이";
-      } else if (greenElapsed < 2500) {
-        gameData.subtitle = "무궁화 꽃이 피";
-      } else {
-        gameData.subtitle = "무궁화 꽃이 피었습니다";
-      }
-
-      // 초록불 시간 종료 → 빨간불로 전환
-      if (greenElapsed >= GREEN_LIGHT_DURATION) {
-        currentPhase = "red";
-        redLightStartTime = currentTime;
-        gameData.isRedLight = true;
-        gameData.subtitle = "!!!";
-        // 빨간불로 전환될 때 랜덤으로 이미지 선택 (1 또는 2)
-        currentRedImage = p.random() < 0.5 ? 1 : 2;
-      }
+      // 초록불 동안 음성이 재생됨
+      // 음성 재생 완료 시 자동으로 빨간불로 전환 (ended 이벤트에서 처리)
+      // 여기서는 특별한 처리 필요 없음
     } else if (currentPhase === "red") {
       const redElapsed = currentTime - redLightStartTime;
 
@@ -282,6 +284,13 @@ const sketch = (p: p5) => {
         greenLightStartTime = currentTime;
         gameData.isRedLight = false;
         gameData.subtitle = "";
+        // 음성 재생 시작
+        if (voiceAudio && !isVoicePlaying) {
+          voiceAudio.currentTime = 0; // 처음부터 재생
+          voiceAudio.play();
+          isVoicePlaying = true;
+          console.log("✅ 음성 재생 시작 (초록불 전환)");
+        }
       }
     }
 
