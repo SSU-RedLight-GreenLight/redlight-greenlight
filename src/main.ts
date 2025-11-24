@@ -48,11 +48,34 @@ const RED_LIGHT_DURATION = 2000; // 빨간불 지속 시간 (ms)
 const MOVE_DISTANCE_PER_PRESS = 0.5; // 한 번 누를 때마다 이동하는 거리 (m) - 50m / 100회 = 0.5m
 
 const sketch = (p: p5) => {
-  // 술래 이미지 변수 (sketch 내부에서 선언)
+  /* =================================
+   * 애셋 변수 (갈아끼우기 쉽게 구조화)
+   * ================================= */
+  // 배경 이미지
+  let imgBackground: p5.Image | undefined;
+  const BACKGROUND_IMAGE_PATH = "assets/stone_stair.png"; // 🎨 배경 이미지 경로 (여기서 변경)
+
+  // 술래 이미지
   let imgHumanGreen: p5.Image | undefined; // 초록불(뒷모습)
   let imgHumanRed1: p5.Image | undefined; // 빨간불(앞모습 1)
   let imgHumanRed2: p5.Image | undefined; // 빨간불(앞모습 2)
   let currentRedImage: number = 1; // 현재 선택된 빨간불 이미지 (1 또는 2)
+  const HUMAN_GREEN_PATH = "assets/human_thum.png"; // 🎨 초록불 이미지 경로
+  const HUMAN_RED1_PATH = "assets/1ju_1.png"; // 🎨 빨간불 이미지 1 경로
+  const HUMAN_RED2_PATH = "assets/1ju_2.png"; // 🎨 빨간불 이미지 2 경로
+
+  // 음성 파일
+  const VOICE_AUDIO_PATH = "assets/voice_1ju.m4a"; // 🎨 음성 파일 경로
+
+  /* =================================
+   * 게임 설정 (조정 가능)
+   * ================================= */
+  const ZOOM_FOCUS_Y_RATIO = 0.75; // 화면 하단에서 4분의 1 지점 (0.75 = 75% 아래)
+  const PROFESSOR_Y_POSITION = 0.75; // 술래 위치: 화면 상단으로부터 75% 지점에 고정
+  const BG_SCALE_MIN = 1.0; // 배경 최소 크기
+  const BG_SCALE_MAX = 2.5; // 배경 최대 크기
+  const PROFESSOR_SCALE_MIN = 1.0; // 술래 최소 크기
+  const PROFESSOR_SCALE_MAX = 1.5; // 술래 최대 크기
 
   /* ---------------------------------
    * [공통] 최초 1회 설정
@@ -62,13 +85,28 @@ const sketch = (p: p5) => {
     p.textAlign(p.CENTER, p.CENTER);
 
     // setup에서 이미지 로드
-    console.log("술래 이미지 로드 시도 중...");
+    console.log("이미지 로드 시도 중...");
     console.log("BASE_URL:", import.meta.env.BASE_URL);
-    console.log("최종 이미지 경로:", `${import.meta.env.BASE_URL}assets/human_thum.png`);
+    console.log(
+      "최종 이미지 경로:",
+      `${import.meta.env.BASE_URL}assets/human_thum.png`
+    );
+
+    // 배경 이미지 로드
+    p.loadImage(
+      `${import.meta.env.BASE_URL}${BACKGROUND_IMAGE_PATH}`,
+      (img) => {
+        imgBackground = img;
+        console.log("✅ 배경 이미지 로드 성공");
+      },
+      (err) => {
+        console.error("❌ 배경 이미지 로드 실패:", err);
+      }
+    );
 
     // 초록불 이미지 (뒷모습)
     p.loadImage(
-      `${import.meta.env.BASE_URL}assets/human_thum.png`,
+      `${import.meta.env.BASE_URL}${HUMAN_GREEN_PATH}`,
       (img) => {
         imgHumanGreen = img;
         console.log("✅ 초록불 이미지 로드 성공");
@@ -80,7 +118,7 @@ const sketch = (p: p5) => {
 
     // 빨간불 이미지 1 (앞모습)
     p.loadImage(
-      `${import.meta.env.BASE_URL}assets/1ju_1.png`,
+      `${import.meta.env.BASE_URL}${HUMAN_RED1_PATH}`,
       (img) => {
         imgHumanRed1 = img;
         console.log("✅ 빨간불 이미지 1 로드 성공");
@@ -92,7 +130,7 @@ const sketch = (p: p5) => {
 
     // 빨간불 이미지 2 (앞모습)
     p.loadImage(
-      `${import.meta.env.BASE_URL}assets/1ju_2.png`,
+      `${import.meta.env.BASE_URL}${HUMAN_RED2_PATH}`,
       (img) => {
         imgHumanRed2 = img;
         console.log("✅ 빨간불 이미지 2 로드 성공");
@@ -103,7 +141,7 @@ const sketch = (p: p5) => {
     );
 
     // 음성 파일 로드
-    voiceAudio = new Audio(`${import.meta.env.BASE_URL}assets/voice_1ju.m4a`);
+    voiceAudio = new Audio(`${import.meta.env.BASE_URL}${VOICE_AUDIO_PATH}`);
     voiceAudio.addEventListener("ended", () => {
       console.log("✅ 음성 재생 완료 - 빨간불로 전환");
       isVoicePlaying = false;
@@ -143,6 +181,33 @@ const sketch = (p: p5) => {
   p.keyReleased = () => {
     B_handleKeyRelease();
   };
+
+  /* =================================
+   * 게임 초기화 함수
+   * ================================= */
+  function resetGame() {
+    // gameData 초기화
+    gameData.currentScene = "START";
+    gameData.distance = 50.0;
+    gameData.timeLeft = 60;
+    gameData.isRedLight = false;
+    gameData.subtitle = "";
+
+    // 내부 변수 초기화
+    lastSecondUpdate = 0;
+    redLightStartTime = 0;
+    currentPhase = "green";
+    spacePressed = false;
+    isVoicePlaying = false;
+
+    // 음성 정지
+    if (voiceAudio) {
+      voiceAudio.pause();
+      voiceAudio.currentTime = 0;
+    }
+
+    console.log("🔄 게임 초기화 완료");
+  }
 
   /* =================================
    * [A] 이영애 함수들
@@ -192,31 +257,79 @@ const sketch = (p: p5) => {
   }
 
   function A_drawStartScene() {
-    p.background(200);
-    p.fill(0);
+    // 배경 이미지 그리기
+    if (imgBackground && imgBackground.width > 0) {
+      p.imageMode(p.CORNER);
+      p.image(imgBackground, 0, 0, p.width, p.height);
+    } else {
+      p.background(200);
+    }
+
+    // 반투명 오버레이
+    p.fill(0, 0, 0, 150);
+    p.rect(0, 0, p.width, p.height);
+
+    // 제목
+    p.fill(255);
     p.textSize(48);
     p.textAlign(p.CENTER, p.CENTER);
     p.text("무궁화 꽃이 피었습니다", p.width / 2, p.height / 2 - 50);
+
+    // 안내 문구
     p.textSize(24);
     p.text("스페이스바를 눌러 시작하세요", p.width / 2, p.height / 2 + 50);
   }
 
   function A_drawWinScene() {
-    p.background(100, 200, 100);
+    // 배경 이미지 그리기
+    if (imgBackground && imgBackground.width > 0) {
+      p.imageMode(p.CORNER);
+      p.image(imgBackground, 0, 0, p.width, p.height);
+    } else {
+      p.background(100, 200, 100);
+    }
+
+    // 반투명 초록 오버레이
+    p.fill(0, 150, 0, 180);
+    p.rect(0, 0, p.width, p.height);
+
+    // 성공 메시지
     p.fill(255);
     p.textSize(64);
     p.textAlign(p.CENTER, p.CENTER);
-    p.text("성공!", p.width / 2, p.height / 2);
+    p.text("성공!", p.width / 2, p.height / 2 - 50);
+
+    // 재시작 안내
+    p.textSize(24);
+    p.text("스페이스바를 눌러 다시 시작", p.width / 2, p.height / 2 + 50);
   }
 
   function A_drawLoseScene(message: string) {
-    p.background(200, 100, 100);
+    // 배경 이미지 그리기
+    if (imgBackground && imgBackground.width > 0) {
+      p.imageMode(p.CORNER);
+      p.image(imgBackground, 0, 0, p.width, p.height);
+    } else {
+      p.background(200, 100, 100);
+    }
+
+    // 반투명 빨간 오버레이
+    p.fill(150, 0, 0, 180);
+    p.rect(0, 0, p.width, p.height);
+
+    // 탈락 메시지
     p.fill(255);
     p.textSize(64);
     p.textAlign(p.CENTER, p.CENTER);
-    p.text("탈락", p.width / 2, p.height / 2 - 50);
+    p.text("탈락", p.width / 2, p.height / 2 - 80);
+
+    // 실패 이유
     p.textSize(32);
-    p.text(message, p.width / 2, p.height / 2 + 50);
+    p.text(message, p.width / 2, p.height / 2 - 10);
+
+    // 재시작 안내
+    p.textSize(24);
+    p.text("스페이스바를 눌러 다시 시작", p.width / 2, p.height / 2 + 60);
   }
 
   /* =================================
@@ -245,6 +358,13 @@ const sketch = (p: p5) => {
           isVoicePlaying = true;
           console.log("✅ 음성 재생 시작 (게임 시작)");
         }
+      } else if (
+        gameData.currentScene === "WIN" ||
+        gameData.currentScene === "LOSE_CAUGHT" ||
+        gameData.currentScene === "LOSE_TIME"
+      ) {
+        // 게임 종료 화면에서 재시작
+        resetGame();
       } else if (gameData.currentScene === "PLAYING") {
         // 초록불일 때만 이동 가능
         if (!gameData.isRedLight) {
@@ -312,16 +432,50 @@ const sketch = (p: p5) => {
    * [C] 김민후 함수들
    * ================================= */
   function C_drawWorld() {
-    // TODO: [C] 김민후가 구현
-    // 배경 회색으로 그리기
+    // 배경 회색으로 그리기 (기본)
     p.background(220);
 
     // PLAYING 상태일 때만 게임 월드 그리기
     if (gameData.currentScene === "PLAYING") {
+      // 배경 이미지가 로드되었으면 원근감 있게 그리기
+      if (imgBackground && imgBackground.width > 0) {
+        // distance가 50 → 0으로 줄어들면 배경이 점점 확대됨
+        const bgScale = p.map(
+          gameData.distance,
+          50,
+          0,
+          BG_SCALE_MIN,
+          BG_SCALE_MAX
+        );
+
+        // 줌인 중심점: 화면 하단 4분의 1 지점 (광장 위치)
+        const focusX = p.width / 2;
+        const focusY = p.height * ZOOM_FOCUS_Y_RATIO;
+
+        p.push();
+        // 줌인 중심점으로 이동
+        p.translate(focusX, focusY);
+        // 확대
+        p.scale(bgScale);
+        // 다시 원점으로 이동하여 이미지 그리기
+        p.translate(-focusX, -focusY);
+
+        p.imageMode(p.CORNER);
+        p.image(imgBackground, 0, 0, p.width, p.height);
+        p.pop();
+      }
+
       // 1인칭 원근법으로 술래 그리기
-      // distance가 50 → 0으로 줄어들면 술래가 점점 커지고 아래로 내려옴
-      const scale = p.map(gameData.distance, 50, 0, 0.5, 3);
-      const yPos = p.map(gameData.distance, 50, 0, 100, 400);
+      // distance가 50 → 0으로 줄어들면 술래가 살짝만 커짐 (크기 변화 최소화)
+      const scale = p.map(
+        gameData.distance,
+        50,
+        0,
+        PROFESSOR_SCALE_MIN,
+        PROFESSOR_SCALE_MAX
+      );
+      // 술래 위치: 화면 상단으로부터 75% 지점에 고정
+      const yPos = p.height * PROFESSOR_Y_POSITION;
 
       p.push();
       p.translate(p.width / 2, yPos);
