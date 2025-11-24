@@ -48,11 +48,18 @@ const RED_LIGHT_DURATION = 2000; // 빨간불 지속 시간 (ms)
 const MOVE_DISTANCE_PER_PRESS = 0.5; // 한 번 누를 때마다 이동하는 거리 (m) - 50m / 100회 = 0.5m
 
 const sketch = (p: p5) => {
+  // 배경 이미지 변수
+  let imgBackground: p5.Image | undefined; // 계단 배경
+
   // 술래 이미지 변수 (sketch 내부에서 선언)
   let imgHumanGreen: p5.Image | undefined; // 초록불(뒷모습)
   let imgHumanRed1: p5.Image | undefined; // 빨간불(앞모습 1)
   let imgHumanRed2: p5.Image | undefined; // 빨간불(앞모습 2)
   let currentRedImage: number = 1; // 현재 선택된 빨간불 이미지 (1 또는 2)
+
+  // 줌인 효과 설정 (조정 가능)
+  const ZOOM_FOCUS_Y_RATIO = 0.75; // 화면 하단에서 4분의 1 지점 (0.75 = 75% 아래)
+  const PROFESSOR_Y_POSITION = 0.75; // 술래 위치: 화면 상단으로부터 75% 지점에 고정
 
   /* ---------------------------------
    * [공통] 최초 1회 설정
@@ -62,9 +69,24 @@ const sketch = (p: p5) => {
     p.textAlign(p.CENTER, p.CENTER);
 
     // setup에서 이미지 로드
-    console.log("술래 이미지 로드 시도 중...");
+    console.log("이미지 로드 시도 중...");
     console.log("BASE_URL:", import.meta.env.BASE_URL);
-    console.log("최종 이미지 경로:", `${import.meta.env.BASE_URL}assets/human_thum.png`);
+    console.log(
+      "최종 이미지 경로:",
+      `${import.meta.env.BASE_URL}assets/human_thum.png`
+    );
+
+    // 배경 이미지 로드
+    p.loadImage(
+      `${import.meta.env.BASE_URL}assets/stone_stair.png`,
+      (img) => {
+        imgBackground = img;
+        console.log("✅ 배경 이미지 로드 성공");
+      },
+      (err) => {
+        console.error("❌ 배경 이미지 로드 실패:", err);
+      }
+    );
 
     // 초록불 이미지 (뒷모습)
     p.loadImage(
@@ -312,16 +334,39 @@ const sketch = (p: p5) => {
    * [C] 김민후 함수들
    * ================================= */
   function C_drawWorld() {
-    // TODO: [C] 김민후가 구현
-    // 배경 회색으로 그리기
+    // 배경 회색으로 그리기 (기본)
     p.background(220);
 
     // PLAYING 상태일 때만 게임 월드 그리기
     if (gameData.currentScene === "PLAYING") {
+      // 배경 이미지가 로드되었으면 원근감 있게 그리기
+      if (imgBackground && imgBackground.width > 0) {
+        // distance가 50 → 0으로 줄어들면 배경이 점점 확대됨
+        // 1.0 (원본 크기) → 2.5 (2.5배 확대)
+        const bgScale = p.map(gameData.distance, 50, 0, 1.0, 2.5);
+
+        // 줌인 중심점: 화면 하단 4분의 1 지점 (광장 위치)
+        const focusX = p.width / 2;
+        const focusY = p.height * ZOOM_FOCUS_Y_RATIO;
+
+        p.push();
+        // 줌인 중심점으로 이동
+        p.translate(focusX, focusY);
+        // 확대
+        p.scale(bgScale);
+        // 다시 원점으로 이동하여 이미지 그리기
+        p.translate(-focusX, -focusY);
+
+        p.imageMode(p.CORNER);
+        p.image(imgBackground, 0, 0, p.width, p.height);
+        p.pop();
+      }
+
       // 1인칭 원근법으로 술래 그리기
-      // distance가 50 → 0으로 줄어들면 술래가 점점 커지고 아래로 내려옴
-      const scale = p.map(gameData.distance, 50, 0, 0.5, 3);
-      const yPos = p.map(gameData.distance, 50, 0, 100, 400);
+      // distance가 50 → 0으로 줄어들면 술래가 살짝만 커짐 (크기 변화 최소화)
+      const scale = p.map(gameData.distance, 50, 0, 1.0, 1.5);
+      // 술래 위치: 화면 상단으로부터 75% 지점에 고정
+      const yPos = p.height * PROFESSOR_Y_POSITION;
 
       p.push();
       p.translate(p.width / 2, yPos);
