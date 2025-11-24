@@ -48,9 +48,9 @@ const MOVE_DISTANCE_PER_PRESS = 0.5; // 한 번 누를 때마다 이동하는 �
 const sketch = (p: p5) => {
   // 술래 이미지 변수 (sketch 내부에서 선언)
   let imgHumanGreen: p5.Image | undefined; // 초록불(뒷모습)
-  let imgHumanRed1: p5.Image | undefined;  // 빨간불(앞모습 1)
-  let imgHumanRed2: p5.Image | undefined;  // 빨간불(앞모습 2)
-  let currentRedImage: number = 1;          // 현재 선택된 빨간불 이미지 (1 또는 2)
+  let imgHumanRed1: p5.Image | undefined; // 빨간불(앞모습 1)
+  let imgHumanRed2: p5.Image | undefined; // 빨간불(앞모습 2)
+  let currentRedImage: number = 1; // 현재 선택된 빨간불 이미지 (1 또는 2)
 
   /* ---------------------------------
    * [공통] 최초 1회 설정
@@ -60,38 +60,41 @@ const sketch = (p: p5) => {
     p.textAlign(p.CENTER, p.CENTER);
 
     // setup에서 이미지 로드
-    console.log('술래 이미지 로드 시도 중...');
+    console.log("술래 이미지 로드 시도 중...");
 
     // 초록불 이미지 (뒷모습)
-    p.loadImage('/assets/human_thum.png',
+    p.loadImage(
+      `${import.meta.env.BASE_URL}assets/human_thum.png`,
       (img) => {
         imgHumanGreen = img;
-        console.log('✅ 초록불 이미지 로드 성공');
+        console.log("✅ 초록불 이미지 로드 성공");
       },
       (err) => {
-        console.error('❌ 초록불 이미지 로드 실패:', err);
+        console.error("❌ 초록불 이미지 로드 실패:", err);
       }
     );
 
     // 빨간불 이미지 1 (앞모습)
-    p.loadImage('/assets/1ju_1.png',
+    p.loadImage(
+      `${import.meta.env.BASE_URL}assets/1ju_1.png`,
       (img) => {
         imgHumanRed1 = img;
-        console.log('✅ 빨간불 이미지 1 로드 성공');
+        console.log("✅ 빨간불 이미지 1 로드 성공");
       },
       (err) => {
-        console.error('❌ 빨간불 이미지 1 로드 실패:', err);
+        console.error("❌ 빨간불 이미지 1 로드 실패:", err);
       }
     );
 
     // 빨간불 이미지 2 (앞모습)
-    p.loadImage('/assets/1ju_2.png',
+    p.loadImage(
+      `${import.meta.env.BASE_URL}assets/1ju_2.png`,
       (img) => {
         imgHumanRed2 = img;
-        console.log('✅ 빨간불 이미지 2 로드 성공');
+        console.log("✅ 빨간불 이미지 2 로드 성공");
       },
       (err) => {
-        console.error('❌ 빨간불 이미지 2 로드 실패:', err);
+        console.error("❌ 빨간불 이미지 2 로드 실패:", err);
       }
     );
   };
@@ -122,7 +125,6 @@ const sketch = (p: p5) => {
   p.keyReleased = () => {
     B_handleKeyRelease();
   };
-
 
   /* =================================
    * [A] 이영애 함수들
@@ -324,7 +326,8 @@ const sketch = (p: p5) => {
       // 술래 이미지 그리기
       if (gameData.isRedLight) {
         // 빨간불: 1ju_1.png 또는 1ju_2.png (랜덤)
-        const selectedRedImg = currentRedImage === 1 ? imgHumanRed1 : imgHumanRed2;
+        const selectedRedImg =
+          currentRedImage === 1 ? imgHumanRed1 : imgHumanRed2;
 
         if (selectedRedImg && selectedRedImg.width > 0) {
           p.image(selectedRedImg, 0, 0, 100, 100);
@@ -350,8 +353,8 @@ const sketch = (p: p5) => {
 };
 
 // DOM이 완전히 로드된 후 p5 인스턴스 생성
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
     new p5(sketch);
   });
 } else {
