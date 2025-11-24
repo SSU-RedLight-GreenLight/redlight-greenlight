@@ -1,5 +1,9 @@
 import p5 from "p5";
 
+// p5.js의 Friendly Error System 비활성화 (성능 향상 및 에러 방지)
+(window as any).p5 = p5;
+(p5 as any).disableFriendlyErrors = true;
+
 /* ---------------------------------
  * API: 전역 게임 데이터 객체
  * [B] 이승민만 이 값을 수정합니다.
@@ -24,7 +28,7 @@ let gameData: GameData = {
 /* ---------------------------------
  * 에셋 변수 (A가 preload에서 채움)
  * --------------------------------- */
-// let imgBg: p5.Image, imgProfessorFront: p5.Image, imgProfessorBack: p5.Image;
+// let imgProfessorFront: p5.Image, imgProfessorBack: p5.Image;
 // let soundBgm: any, soundCaught: any; // p5.sound 라이브러리 필요
 
 /* ---------------------------------
@@ -42,12 +46,54 @@ const RED_LIGHT_DURATION = 2000; // 빨간불 지속 시간 (ms)
 const MOVE_DISTANCE_PER_PRESS = 0.5; // 한 번 누를 때마다 이동하는 거리 (m) - 50m / 100회 = 0.5m
 
 const sketch = (p: p5) => {
+  // 술래 이미지 변수 (sketch 내부에서 선언)
+  let imgHumanGreen: p5.Image | undefined; // 초록불(뒷모습)
+  let imgHumanRed1: p5.Image | undefined;  // 빨간불(앞모습 1)
+  let imgHumanRed2: p5.Image | undefined;  // 빨간불(앞모습 2)
+  let currentRedImage: number = 1;          // 현재 선택된 빨간불 이미지 (1 또는 2)
+
   /* ---------------------------------
    * [공통] 최초 1회 설정
    * --------------------------------- */
   p.setup = () => {
     p.createCanvas(800, 600);
     p.textAlign(p.CENTER, p.CENTER);
+
+    // setup에서 이미지 로드
+    console.log('술래 이미지 로드 시도 중...');
+
+    // 초록불 이미지 (뒷모습)
+    p.loadImage('/assets/human_thum.png',
+      (img) => {
+        imgHumanGreen = img;
+        console.log('✅ 초록불 이미지 로드 성공');
+      },
+      (err) => {
+        console.error('❌ 초록불 이미지 로드 실패:', err);
+      }
+    );
+
+    // 빨간불 이미지 1 (앞모습)
+    p.loadImage('/assets/1ju_1.png',
+      (img) => {
+        imgHumanRed1 = img;
+        console.log('✅ 빨간불 이미지 1 로드 성공');
+      },
+      (err) => {
+        console.error('❌ 빨간불 이미지 1 로드 실패:', err);
+      }
+    );
+
+    // 빨간불 이미지 2 (앞모습)
+    p.loadImage('/assets/1ju_2.png',
+      (img) => {
+        imgHumanRed2 = img;
+        console.log('✅ 빨간불 이미지 2 로드 성공');
+      },
+      (err) => {
+        console.error('❌ 빨간불 이미지 2 로드 실패:', err);
+      }
+    );
   };
 
   /* ---------------------------------
@@ -220,6 +266,8 @@ const sketch = (p: p5) => {
         redLightStartTime = currentTime;
         gameData.isRedLight = true;
         gameData.subtitle = "!!!";
+        // 빨간불로 전환될 때 랜덤으로 이미지 선택 (1 또는 2)
+        currentRedImage = p.random() < 0.5 ? 1 : 2;
       }
     } else if (currentPhase === "red") {
       const redElapsed = currentTime - redLightStartTime;
@@ -256,7 +304,7 @@ const sketch = (p: p5) => {
    * ================================= */
   function C_drawWorld() {
     // TODO: [C] 김민후가 구현
-    // 배경 그리기
+    // 배경 회색으로 그리기
     p.background(220);
 
     // PLAYING 상태일 때만 게임 월드 그리기
@@ -266,23 +314,46 @@ const sketch = (p: p5) => {
       const scale = p.map(gameData.distance, 50, 0, 0.5, 3);
       const yPos = p.map(gameData.distance, 50, 0, 100, 400);
 
-      // 술래 이미지 (임시로 원으로 표현)
       p.push();
       p.translate(p.width / 2, yPos);
       p.scale(scale);
 
+      // 이미지 중심을 기준으로 그리기
+      p.imageMode(p.CENTER);
+
+      // 술래 이미지 그리기
       if (gameData.isRedLight) {
-        // 빨간불: 앞모습 (빨간색)
-        p.fill(255, 100, 100);
+        // 빨간불: 1ju_1.png 또는 1ju_2.png (랜덤)
+        const selectedRedImg = currentRedImage === 1 ? imgHumanRed1 : imgHumanRed2;
+
+        if (selectedRedImg && selectedRedImg.width > 0) {
+          p.image(selectedRedImg, 0, 0, 100, 100);
+        } else {
+          // 이미지 로드 전 임시 빨간 원 표시
+          p.fill(255, 100, 100);
+          p.ellipse(0, 0, 100, 100);
+        }
       } else {
-        // 초록불: 뒷모습 (회색)
-        p.fill(150);
+        // 초록불: human_thum.png (뒷모습)
+        if (imgHumanGreen && imgHumanGreen.width > 0) {
+          p.image(imgHumanGreen, 0, 0, 100, 100);
+        } else {
+          // 이미지 로드 전 임시 회색 원 표시
+          p.fill(150);
+          p.ellipse(0, 0, 100, 100);
+        }
       }
 
-      p.ellipse(0, 0, 100, 100);
       p.pop();
     }
   }
 };
 
-new p5(sketch);
+// DOM이 완전히 로드된 후 p5 인스턴스 생성
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    new p5(sketch);
+  });
+} else {
+  new p5(sketch);
+}
