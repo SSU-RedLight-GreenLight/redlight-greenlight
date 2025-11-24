@@ -37,7 +37,6 @@ let gameData: GameData = {
 // let gameStartTime: number = 0;      // 게임 시작 시각 (나중에 사용 가능)
 let lastSecondUpdate: number = 0; // 마지막 초 업데이트 시각
 let redLightStartTime: number = 0; // 빨간불 시작 시각
-let greenLightStartTime: number = 0; // 초록불 시작 시각
 let currentPhase: "green" | "red" = "green"; // 현재 신호등 상태
 let spacePressed: boolean = false; // 스페이스바가 현재 눌린 상태인지 추적
 
@@ -45,7 +44,6 @@ let spacePressed: boolean = false; // 스페이스바가 현재 눌린 상태인
 let voiceAudio: HTMLAudioElement | null = null;
 let isVoicePlaying: boolean = false;
 
-const GREEN_LIGHT_DURATION = 3000; // 초록불 지속 시간 (ms) - 음성 재생 시에는 사용하지 않음
 const RED_LIGHT_DURATION = 2000; // 빨간불 지속 시간 (ms)
 const MOVE_DISTANCE_PER_PRESS = 0.5; // 한 번 누를 때마다 이동하는 거리 (m) - 50m / 100회 = 0.5m
 
@@ -237,7 +235,6 @@ const sketch = (p: p5) => {
         // 게임 시작
         gameData.currentScene = "PLAYING";
         lastSecondUpdate = p.millis();
-        greenLightStartTime = p.millis();
         currentPhase = "green";
         gameData.isRedLight = false;
         gameData.subtitle = "";
@@ -281,7 +278,6 @@ const sketch = (p: p5) => {
       // 빨간불 시간 종료 → 초록불로 전환
       if (redElapsed >= RED_LIGHT_DURATION) {
         currentPhase = "green";
-        greenLightStartTime = currentTime;
         gameData.isRedLight = false;
         gameData.subtitle = "";
         // 음성 재생 시작
