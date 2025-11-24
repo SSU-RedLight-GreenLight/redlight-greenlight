@@ -61,6 +61,8 @@ const sketch = (p: p5) => {
 
     // setup에서 이미지 로드
     console.log("술래 이미지 로드 시도 중...");
+    console.log("BASE_URL:", import.meta.env.BASE_URL);
+    console.log("최종 이미지 경로:", `${import.meta.env.BASE_URL}assets/human_thum.png`);
 
     // 초록불 이미지 (뒷모습)
     p.loadImage(
