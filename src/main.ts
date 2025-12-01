@@ -23,6 +23,115 @@ interface LoadedTagger {
 }
 
 /**
+ * 배경음악 관리 클래스
+ * - 게임 씬에 따라 배경음악 자동 전환
+ * - 무한 재생 및 한 번만 재생 지원
+ */
+class BackgroundMusicManager {
+  private currentScene: string = "";
+  private currentAudio: HTMLAudioElement | null = null;
+  private audioMap: Map<string, HTMLAudioElement> = new Map();
+  private isInitialized: boolean = false; // 사용자 상호작용 후 초기화 여부
+
+  constructor() {
+    // 배경음악 파일 로드
+    this.loadAudio("START", "assets/game_main.mp3", true);
+    this.loadAudio("PLAYING", "assets/game_play.mp3", true);
+    this.loadAudio("WIN", "assets/game_clear.mp3", false);
+    this.loadAudio("LOSE", "assets/game_over.mp3", false);
+  }
+
+  /**
+   * 오디오 파일 로드
+   */
+  private loadAudio(key: string, path: string, loop: boolean): void {
+    const audio = new Audio(`${import.meta.env.BASE_URL}${path}`);
+    audio.loop = loop;
+    audio.volume = 0.5; // 볼륨 50%로 설정
+    this.audioMap.set(key, audio);
+    console.log(`🎵 배경음악 로드: ${key} (${path}) - loop: ${loop}`);
+  }
+
+  /**
+   * 사용자 상호작용으로 음악 시스템 초기화
+   * (브라우저 자동 재생 정책 우회)
+   */
+  initialize(): void {
+    if (this.isInitialized) return;
+    this.isInitialized = true;
+    console.log("🎵 배경음악 시스템 초기화됨 (사용자 상호작용 감지)");
+  }
+
+  /**
+   * 음악 시스템 초기화 여부 확인
+   */
+  getIsInitialized(): boolean {
+    return this.isInitialized;
+  }
+
+  /**
+   * 씬에 맞는 배경음악 재생
+   */
+  playMusicForScene(scene: string): void {
+    // 이미 같은 씬의 음악이 재생 중이면 무시
+    if (
+      this.currentScene === scene &&
+      this.currentAudio &&
+      !this.currentAudio.paused
+    ) {
+      return;
+    }
+
+    // 현재 재생 중인 음악 정지
+    if (this.currentAudio) {
+      this.currentAudio.pause();
+      this.currentAudio.currentTime = 0;
+    }
+
+    // 씬에 맞는 음악 선택
+    let audioKey = scene;
+    if (scene === "LOSE_CAUGHT" || scene === "LOSE_TIME") {
+      audioKey = "LOSE"; // LOSE_CAUGHT, LOSE_TIME 모두 game_over.mp3 사용
+    }
+
+    const audio = this.audioMap.get(audioKey);
+    if (audio) {
+      this.currentAudio = audio;
+      this.currentScene = scene;
+
+      // 재생 시도 (브라우저가 허용하면 즉시 재생, 아니면 사용자 상호작용 필요)
+      audio
+        .play()
+        .then(() => {
+          console.log(`🎵 배경음악 재생: ${scene}`);
+          this.isInitialized = true; // 재생 성공 시 초기화 플래그 설정
+        })
+        .catch((err) => {
+          if (!this.isInitialized) {
+            console.log(`⏸️ 배경음악 대기 중 (사용자 상호작용 필요): ${scene}`);
+          } else {
+            console.warn(`⚠️ 배경음악 재생 실패: ${err.message}`);
+          }
+        });
+    } else {
+      console.warn(`⚠️ 씬에 맞는 배경음악을 찾을 수 없음: ${scene}`);
+    }
+  }
+
+  /**
+   * 모든 배경음악 정지
+   */
+  stopAll(): void {
+    if (this.currentAudio) {
+      this.currentAudio.pause();
+      this.currentAudio.currentTime = 0;
+      this.currentAudio = null;
+    }
+    this.currentScene = "";
+  }
+}
+
+/**
  * 술래 관리 클래스
  * - 여러 술래를 등록하고 랜덤으로 선택
  * - 음성과 스프라이트를 1:1로 연동
@@ -46,9 +155,7 @@ class TaggerManager {
   loadTagger(config: TaggerConfig): void {
     const tagger: LoadedTagger = {
       config,
-      voiceAudio: new Audio(
-        `${import.meta.env.BASE_URL}${config.voicePath}`
-      ),
+      voiceAudio: new Audio(`${import.meta.env.BASE_URL}${config.voicePath}`),
       greenSprite: undefined,
       redSprites: [],
     };
@@ -133,7 +240,9 @@ class TaggerManager {
     this.currentTagger.voiceAudio.play();
     this.isVoicePlaying = true;
     console.log(
-      `🔊 [${this.currentTagger.config.name}] 음성 재생 시작 (빨간불 스프라이트: ${this.currentRedSpriteIndex + 1})`
+      `🔊 [${
+        this.currentTagger.config.name
+      }] 음성 재생 시작 (빨간불 스프라이트: ${this.currentRedSpriteIndex + 1})`
     );
   }
 
@@ -223,6 +332,9 @@ let spacePressed: boolean = false; // 스페이스바가 현재 눌린 상태인
 // 술래 관리자 (TaggerManager 인스턴스는 sketch 내부에서 생성)
 let taggerManager: TaggerManager | null = null;
 
+// 배경음악 관리자
+let bgMusicManager: BackgroundMusicManager | null = null;
+
 const RED_LIGHT_DURATION = 2000; // 빨간불 지속 시간 (ms)
 const MOVE_DISTANCE_PER_PRESS = 0.5; // 한 번 누를 때마다 이동하는 거리 (m) - 50m / 100회 = 0.5m
 
@@ -302,7 +414,21 @@ const sketch = (p: p5) => {
       gameData.subtitle = "!!!";
     });
 
+    // BackgroundMusicManager 초기화 및 시작 음악 재생
+    bgMusicManager = new BackgroundMusicManager();
+    bgMusicManager.playMusicForScene("START");
+
     console.log("✅ 게임 초기화 완료");
+  };
+
+  /* ---------------------------------
+   * 마우스 클릭 시 음악 초기화 (브라우저 자동 재생 정책 우회)
+   * --------------------------------- */
+  p.mousePressed = () => {
+    // 첫 클릭 시 음악이 아직 재생되지 않았다면 재생 시도
+    if (bgMusicManager && !bgMusicManager.getIsInitialized()) {
+      bgMusicManager.playMusicForScene(gameData.currentScene);
+    }
   };
 
   /* ---------------------------------
@@ -352,6 +478,11 @@ const sketch = (p: p5) => {
     // 음성 정지
     if (taggerManager) {
       taggerManager.stopVoice();
+    }
+
+    // 배경음악 전환
+    if (bgMusicManager) {
+      bgMusicManager.playMusicForScene("START");
     }
 
     console.log("🔄 게임 초기화 완료");
@@ -426,6 +557,13 @@ const sketch = (p: p5) => {
     // 안내 문구
     p.textSize(24);
     p.text("스페이스바를 눌러 시작하세요", p.width / 2, p.height / 2 + 50);
+
+    // 음악이 아직 재생되지 않았다면 클릭 안내 표시
+    if (bgMusicManager && !bgMusicManager.getIsInitialized()) {
+      p.textSize(18);
+      p.fill(255, 255, 0);
+      p.text("(화면을 클릭하면 음악이 재생됩니다)", p.width / 2, p.height / 2 + 100);
+    }
   }
 
   function A_drawWinScene() {
@@ -484,6 +622,12 @@ const sketch = (p: p5) => {
    * [B] 이승민 함수들
    * ================================= */
   function B_handleKeyPress() {
+    // 첫 번째 키 입력 시 음악이 아직 재생되지 않았다면 재생 시도
+    // (브라우저 자동 재생 정책으로 인해 페이지 로드 시 재생 실패했을 경우)
+    if (bgMusicManager && !bgMusicManager.getIsInitialized()) {
+      bgMusicManager.playMusicForScene(gameData.currentScene);
+    }
+
     // 스페이스바 처리
     if (p.keyCode === 32) {
       // 이미 눌린 상태면 무시 (중복 입력 방지)
@@ -499,7 +643,12 @@ const sketch = (p: p5) => {
         currentPhase = "green";
         gameData.isRedLight = false;
         gameData.subtitle = "";
-        
+
+        // 배경음악 전환
+        if (bgMusicManager) {
+          bgMusicManager.playMusicForScene("PLAYING");
+        }
+
         // 랜덤으로 술래 선택 및 음성 재생 시작
         if (taggerManager) {
           taggerManager.selectRandomTagger();
@@ -519,6 +668,11 @@ const sketch = (p: p5) => {
         } else {
           // 빨간불에 움직이면 즉시 잡힘
           gameData.currentScene = "LOSE_CAUGHT";
+
+          // 배경음악 전환
+          if (bgMusicManager) {
+            bgMusicManager.playMusicForScene("LOSE_CAUGHT");
+          }
         }
       }
     }
@@ -547,7 +701,7 @@ const sketch = (p: p5) => {
         currentPhase = "green";
         gameData.isRedLight = false;
         gameData.subtitle = "";
-        
+
         // 랜덤으로 술래 선택 및 음성 재생 시작
         if (taggerManager) {
           taggerManager.selectRandomTagger();
@@ -566,11 +720,21 @@ const sketch = (p: p5) => {
     // 시간 초과 판정
     if (gameData.timeLeft <= 0) {
       gameData.currentScene = "LOSE_TIME";
+
+      // 배경음악 전환
+      if (bgMusicManager) {
+        bgMusicManager.playMusicForScene("LOSE_TIME");
+      }
     }
 
     // 승리 판정
     if (gameData.distance <= 0) {
       gameData.currentScene = "WIN";
+
+      // 배경음악 전환
+      if (bgMusicManager) {
+        bgMusicManager.playMusicForScene("WIN");
+      }
     }
   }
 
@@ -633,7 +797,7 @@ const sketch = (p: p5) => {
       // 술래 이미지 그리기 (TaggerManager에서 가져옴)
       if (taggerManager) {
         let spriteToShow: p5.Image | undefined;
-        
+
         if (gameData.isRedLight) {
           // 빨간불: 현재 선택된 술래의 빨간불 스프라이트
           spriteToShow = taggerManager.getCurrentRedSprite();
