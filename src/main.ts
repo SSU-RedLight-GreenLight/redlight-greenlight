@@ -5,6 +5,187 @@ import p5 from "p5";
 (p5 as any).disableFriendlyErrors = true;
 
 /* ---------------------------------
+ * 술래 시스템 타입 정의
+ * --------------------------------- */
+interface TaggerConfig {
+  id: string; // 술래 고유 ID (예: "1ju", "professor", "robot")
+  name: string; // 술래 이름 (예: "1주차", "교수님", "로봇")
+  voicePath: string; // 음성 파일 경로
+  greenSpritePath: string; // 초록불(뒷모습) 스프라이트 경로
+  redSpritePaths: string[]; // 빨간불(앞모습) 스프라이트 경로 배열 (여러 개 가능)
+}
+
+interface LoadedTagger {
+  config: TaggerConfig;
+  voiceAudio: HTMLAudioElement;
+  greenSprite: p5.Image | undefined;
+  redSprites: (p5.Image | undefined)[];
+}
+
+/**
+ * 술래 관리 클래스
+ * - 여러 술래를 등록하고 랜덤으로 선택
+ * - 음성과 스프라이트를 1:1로 연동
+ * - 술래마다 여러 개의 빨간불 스프라이트 지원
+ */
+class TaggerManager {
+  private taggers: LoadedTagger[] = [];
+  private currentTagger: LoadedTagger | null = null;
+  private currentRedSpriteIndex: number = 0;
+  private p5Instance: p5;
+  private isVoicePlaying: boolean = false;
+  private onVoiceEndCallback: (() => void) | null = null;
+
+  constructor(p5Instance: p5) {
+    this.p5Instance = p5Instance;
+  }
+
+  /**
+   * 술래 등록 및 에셋 로드
+   */
+  loadTagger(config: TaggerConfig): void {
+    const tagger: LoadedTagger = {
+      config,
+      voiceAudio: new Audio(
+        `${import.meta.env.BASE_URL}${config.voicePath}`
+      ),
+      greenSprite: undefined,
+      redSprites: [],
+    };
+
+    // 음성 종료 이벤트 리스너
+    tagger.voiceAudio.addEventListener("ended", () => {
+      console.log(`✅ [${config.name}] 음성 재생 완료`);
+      this.isVoicePlaying = false;
+      if (this.onVoiceEndCallback) {
+        this.onVoiceEndCallback();
+      }
+    });
+
+    // 초록불 스프라이트 로드
+    this.p5Instance.loadImage(
+      `${import.meta.env.BASE_URL}${config.greenSpritePath}`,
+      (img) => {
+        tagger.greenSprite = img;
+        console.log(`✅ [${config.name}] 초록불 스프라이트 로드 성공`);
+      },
+      (err) => {
+        console.error(`❌ [${config.name}] 초록불 스프라이트 로드 실패:`, err);
+      }
+    );
+
+    // 빨간불 스프라이트들 로드
+    config.redSpritePaths.forEach((path, index) => {
+      this.p5Instance.loadImage(
+        `${import.meta.env.BASE_URL}${path}`,
+        (img) => {
+          tagger.redSprites[index] = img;
+          console.log(
+            `✅ [${config.name}] 빨간불 스프라이트 ${index + 1} 로드 성공`
+          );
+        },
+        (err) => {
+          console.error(
+            `❌ [${config.name}] 빨간불 스프라이트 ${index + 1} 로드 실패:`,
+            err
+          );
+        }
+      );
+    });
+
+    this.taggers.push(tagger);
+    console.log(`✅ 술래 등록 완료: ${config.name}`);
+  }
+
+  /**
+   * 랜덤으로 술래 선택
+   */
+  selectRandomTagger(): void {
+    if (this.taggers.length === 0) {
+      console.error("❌ 등록된 술래가 없습니다!");
+      return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * this.taggers.length);
+    this.currentTagger = this.taggers[randomIndex];
+    console.log(`🎲 랜덤 술래 선택: ${this.currentTagger.config.name}`);
+  }
+
+  /**
+   * 음성 재생 시작
+   */
+  playVoice(): void {
+    if (!this.currentTagger) {
+      console.error("❌ 선택된 술래가 없습니다!");
+      return;
+    }
+
+    if (this.isVoicePlaying) {
+      console.warn("⚠️ 이미 음성이 재생 중입니다.");
+      return;
+    }
+
+    // 빨간불 스프라이트 랜덤 선택
+    const redSpritesCount = this.currentTagger.config.redSpritePaths.length;
+    this.currentRedSpriteIndex = Math.floor(Math.random() * redSpritesCount);
+
+    this.currentTagger.voiceAudio.currentTime = 0;
+    this.currentTagger.voiceAudio.play();
+    this.isVoicePlaying = true;
+    console.log(
+      `🔊 [${this.currentTagger.config.name}] 음성 재생 시작 (빨간불 스프라이트: ${this.currentRedSpriteIndex + 1})`
+    );
+  }
+
+  /**
+   * 음성 정지
+   */
+  stopVoice(): void {
+    if (this.currentTagger) {
+      this.currentTagger.voiceAudio.pause();
+      this.currentTagger.voiceAudio.currentTime = 0;
+      this.isVoicePlaying = false;
+    }
+  }
+
+  /**
+   * 음성 종료 콜백 설정
+   */
+  setOnVoiceEnd(callback: () => void): void {
+    this.onVoiceEndCallback = callback;
+  }
+
+  /**
+   * 현재 술래의 초록불 스프라이트 가져오기
+   */
+  getCurrentGreenSprite(): p5.Image | undefined {
+    return this.currentTagger?.greenSprite;
+  }
+
+  /**
+   * 현재 술래의 빨간불 스프라이트 가져오기 (현재 선택된 것)
+   */
+  getCurrentRedSprite(): p5.Image | undefined {
+    if (!this.currentTagger) return undefined;
+    return this.currentTagger.redSprites[this.currentRedSpriteIndex];
+  }
+
+  /**
+   * 음성 재생 중인지 확인
+   */
+  isPlaying(): boolean {
+    return this.isVoicePlaying;
+  }
+
+  /**
+   * 현재 술래 정보 가져오기
+   */
+  getCurrentTagger(): LoadedTagger | null {
+    return this.currentTagger;
+  }
+}
+
+/* ---------------------------------
  * API: 전역 게임 데이터 객체
  * [B] 이승민만 이 값을 수정합니다.
  * [A], [C]는 이 값을 읽어서 그리기만 합니다.
@@ -34,15 +215,13 @@ let gameData: GameData = {
 /* ---------------------------------
  * [B] 이승민 전용 내부 변수
  * --------------------------------- */
-// let gameStartTime: number = 0;      // 게임 시작 시각 (나중에 사용 가능)
 let lastSecondUpdate: number = 0; // 마지막 초 업데이트 시각
 let redLightStartTime: number = 0; // 빨간불 시작 시각
 let currentPhase: "green" | "red" = "green"; // 현재 신호등 상태
 let spacePressed: boolean = false; // 스페이스바가 현재 눌린 상태인지 추적
 
-// 음성 파일 객체
-let voiceAudio: HTMLAudioElement | null = null;
-let isVoicePlaying: boolean = false;
+// 술래 관리자 (TaggerManager 인스턴스는 sketch 내부에서 생성)
+let taggerManager: TaggerManager | null = null;
 
 const RED_LIGHT_DURATION = 2000; // 빨간불 지속 시간 (ms)
 const MOVE_DISTANCE_PER_PRESS = 0.5; // 한 번 누를 때마다 이동하는 거리 (m) - 50m / 100회 = 0.5m
@@ -55,17 +234,26 @@ const sketch = (p: p5) => {
   let imgBackground: p5.Image | undefined;
   const BACKGROUND_IMAGE_PATH = "assets/stone_stair.png"; // 🎨 배경 이미지 경로 (여기서 변경)
 
-  // 술래 이미지
-  let imgHumanGreen: p5.Image | undefined; // 초록불(뒷모습)
-  let imgHumanRed1: p5.Image | undefined; // 빨간불(앞모습 1)
-  let imgHumanRed2: p5.Image | undefined; // 빨간불(앞모습 2)
-  let currentRedImage: number = 1; // 현재 선택된 빨간불 이미지 (1 또는 2)
-  const HUMAN_GREEN_PATH = "assets/human_thum.png"; // 🎨 초록불 이미지 경로
-  const HUMAN_RED1_PATH = "assets/1ju_1.png"; // 🎨 빨간불 이미지 1 경로
-  const HUMAN_RED2_PATH = "assets/1ju_2.png"; // 🎨 빨간불 이미지 2 경로
-
-  // 음성 파일
-  const VOICE_AUDIO_PATH = "assets/voice_1ju.m4a"; // 🎨 음성 파일 경로
+  /* =================================
+   * 술래 설정 (여기서 술래를 추가/수정)
+   * ================================= */
+  const TAGGER_CONFIGS: TaggerConfig[] = [
+    {
+      id: "1ju",
+      name: "1주차",
+      voicePath: "assets/voice_1ju.m4a",
+      greenSpritePath: "assets/human_thum.png",
+      redSpritePaths: ["assets/1ju_1.png", "assets/1ju_2.png"],
+    },
+    // 🎨 새로운 술래를 추가하려면 여기에 추가하세요!
+    // {
+    //   id: "professor",
+    //   name: "교수님",
+    //   voicePath: "assets/voice_professor.m4a",
+    //   greenSpritePath: "assets/professor_back.png",
+    //   redSpritePaths: ["assets/professor_front1.png", "assets/professor_front2.png", "assets/professor_front3.png"],
+    // },
+  ];
 
   /* =================================
    * 게임 설정 (조정 가능)
@@ -84,13 +272,8 @@ const sketch = (p: p5) => {
     p.createCanvas(800, 600);
     p.textAlign(p.CENTER, p.CENTER);
 
-    // setup에서 이미지 로드
-    console.log("이미지 로드 시도 중...");
+    console.log("🎮 게임 초기화 시작...");
     console.log("BASE_URL:", import.meta.env.BASE_URL);
-    console.log(
-      "최종 이미지 경로:",
-      `${import.meta.env.BASE_URL}assets/human_thum.png`
-    );
 
     // 배경 이미지 로드
     p.loadImage(
@@ -104,55 +287,22 @@ const sketch = (p: p5) => {
       }
     );
 
-    // 초록불 이미지 (뒷모습)
-    p.loadImage(
-      `${import.meta.env.BASE_URL}${HUMAN_GREEN_PATH}`,
-      (img) => {
-        imgHumanGreen = img;
-        console.log("✅ 초록불 이미지 로드 성공");
-      },
-      (err) => {
-        console.error("❌ 초록불 이미지 로드 실패:", err);
-      }
-    );
+    // TaggerManager 초기화 및 술래 등록
+    taggerManager = new TaggerManager(p);
+    TAGGER_CONFIGS.forEach((config) => {
+      taggerManager!.loadTagger(config);
+    });
 
-    // 빨간불 이미지 1 (앞모습)
-    p.loadImage(
-      `${import.meta.env.BASE_URL}${HUMAN_RED1_PATH}`,
-      (img) => {
-        imgHumanRed1 = img;
-        console.log("✅ 빨간불 이미지 1 로드 성공");
-      },
-      (err) => {
-        console.error("❌ 빨간불 이미지 1 로드 실패:", err);
-      }
-    );
-
-    // 빨간불 이미지 2 (앞모습)
-    p.loadImage(
-      `${import.meta.env.BASE_URL}${HUMAN_RED2_PATH}`,
-      (img) => {
-        imgHumanRed2 = img;
-        console.log("✅ 빨간불 이미지 2 로드 성공");
-      },
-      (err) => {
-        console.error("❌ 빨간불 이미지 2 로드 실패:", err);
-      }
-    );
-
-    // 음성 파일 로드
-    voiceAudio = new Audio(`${import.meta.env.BASE_URL}${VOICE_AUDIO_PATH}`);
-    voiceAudio.addEventListener("ended", () => {
+    // 음성 종료 시 빨간불로 전환하는 콜백 설정
+    taggerManager.setOnVoiceEnd(() => {
       console.log("✅ 음성 재생 완료 - 빨간불로 전환");
-      isVoicePlaying = false;
       currentPhase = "red";
       redLightStartTime = p.millis();
       gameData.isRedLight = true;
       gameData.subtitle = "!!!";
-      // 빨간불로 전환될 때 랜덤으로 이미지 선택 (1 또는 2)
-      currentRedImage = p.random() < 0.5 ? 1 : 2;
     });
-    console.log("✅ 음성 파일 로드 완료");
+
+    console.log("✅ 게임 초기화 완료");
   };
 
   /* ---------------------------------
@@ -198,12 +348,10 @@ const sketch = (p: p5) => {
     redLightStartTime = 0;
     currentPhase = "green";
     spacePressed = false;
-    isVoicePlaying = false;
 
     // 음성 정지
-    if (voiceAudio) {
-      voiceAudio.pause();
-      voiceAudio.currentTime = 0;
+    if (taggerManager) {
+      taggerManager.stopVoice();
     }
 
     console.log("🔄 게임 초기화 완료");
@@ -351,12 +499,11 @@ const sketch = (p: p5) => {
         currentPhase = "green";
         gameData.isRedLight = false;
         gameData.subtitle = "";
-        // 음성 재생 시작
-        if (voiceAudio && !isVoicePlaying) {
-          voiceAudio.currentTime = 0; // 처음부터 재생
-          voiceAudio.play();
-          isVoicePlaying = true;
-          console.log("✅ 음성 재생 시작 (게임 시작)");
+        
+        // 랜덤으로 술래 선택 및 음성 재생 시작
+        if (taggerManager) {
+          taggerManager.selectRandomTagger();
+          taggerManager.playVoice();
         }
       } else if (
         gameData.currentScene === "WIN" ||
@@ -400,12 +547,11 @@ const sketch = (p: p5) => {
         currentPhase = "green";
         gameData.isRedLight = false;
         gameData.subtitle = "";
-        // 음성 재생 시작
-        if (voiceAudio && !isVoicePlaying) {
-          voiceAudio.currentTime = 0; // 처음부터 재생
-          voiceAudio.play();
-          isVoicePlaying = true;
-          console.log("✅ 음성 재생 시작 (초록불 전환)");
+        
+        // 랜덤으로 술래 선택 및 음성 재생 시작
+        if (taggerManager) {
+          taggerManager.selectRandomTagger();
+          taggerManager.playVoice();
         }
       }
     }
@@ -484,26 +630,23 @@ const sketch = (p: p5) => {
       // 이미지 중심을 기준으로 그리기
       p.imageMode(p.CENTER);
 
-      // 술래 이미지 그리기
-      if (gameData.isRedLight) {
-        // 빨간불: 1ju_1.png 또는 1ju_2.png (랜덤)
-        const selectedRedImg =
-          currentRedImage === 1 ? imgHumanRed1 : imgHumanRed2;
-
-        if (selectedRedImg && selectedRedImg.width > 0) {
-          p.image(selectedRedImg, 0, 0, 100, 100);
+      // 술래 이미지 그리기 (TaggerManager에서 가져옴)
+      if (taggerManager) {
+        let spriteToShow: p5.Image | undefined;
+        
+        if (gameData.isRedLight) {
+          // 빨간불: 현재 선택된 술래의 빨간불 스프라이트
+          spriteToShow = taggerManager.getCurrentRedSprite();
         } else {
-          // 이미지 로드 전 임시 빨간 원 표시
-          p.fill(255, 100, 100);
-          p.ellipse(0, 0, 100, 100);
+          // 초록불: 현재 선택된 술래의 초록불 스프라이트
+          spriteToShow = taggerManager.getCurrentGreenSprite();
         }
-      } else {
-        // 초록불: human_thum.png (뒷모습)
-        if (imgHumanGreen && imgHumanGreen.width > 0) {
-          p.image(imgHumanGreen, 0, 0, 100, 100);
+
+        if (spriteToShow && spriteToShow.width > 0) {
+          p.image(spriteToShow, 0, 0, 100, 100);
         } else {
-          // 이미지 로드 전 임시 회색 원 표시
-          p.fill(150);
+          // 이미지 로드 전 임시 원 표시
+          p.fill(gameData.isRedLight ? [255, 100, 100] : [150]);
           p.ellipse(0, 0, 100, 100);
         }
       }
