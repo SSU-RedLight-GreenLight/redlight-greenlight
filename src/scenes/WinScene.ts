@@ -4,6 +4,7 @@ import { SceneManager } from "../core/SceneManager";
 import { AssetManager } from "../core/AssetManager";
 import { BackgroundMusicManager } from "../managers/BackgroundMusicManager";
 import { Button } from "../ui/Button";
+import { IconButton } from "../ui/IconButton";
 
 /**
  * 승리 화면 씬
@@ -13,6 +14,7 @@ export class WinScene extends BaseScene {
   private bgMusicManager: BackgroundMusicManager;
   private assetManager: AssetManager;
   private restartButton: Button | null = null;
+  private creditsButton: IconButton | null = null;
 
   constructor(
     p5Instance: p5,
@@ -46,6 +48,23 @@ export class WinScene extends BaseScene {
         textSize: 28,
       }
     );
+
+    // 크레딧 아이콘 버튼 생성 (우측 상단)
+    this.creditsButton = new IconButton(
+      this.p,
+      this.p.width - 40,
+      40,
+      50,
+      "ⓘ",
+      () => {
+        this.sceneManager.switchTo("CREDITS");
+      },
+      {
+        bgColor: this.p.color(255, 255, 255, 150),
+        hoverColor: this.p.color(255, 255, 255, 230),
+        iconColor: this.p.color(0),
+      }
+    );
   }
 
   update(): void {
@@ -77,8 +96,16 @@ export class WinScene extends BaseScene {
       this.restartButton.draw();
     }
 
+    // 크레딧 아이콘 버튼 그리기
+    if (this.creditsButton) {
+      this.creditsButton.draw();
+    }
+
     // 커서 초기화
-    if (this.restartButton && !this.restartButton.getIsHovered()) {
+    const anyHovered =
+      (this.restartButton && this.restartButton.getIsHovered()) ||
+      (this.creditsButton && this.creditsButton.getIsHovered());
+    if (!anyHovered) {
       this.p.cursor(this.p.ARROW);
     }
   }
@@ -91,6 +118,9 @@ export class WinScene extends BaseScene {
     // 버튼 클릭 처리
     if (this.restartButton) {
       this.restartButton.handleClick();
+    }
+    if (this.creditsButton) {
+      this.creditsButton.handleClick();
     }
   }
 

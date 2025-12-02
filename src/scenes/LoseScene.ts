@@ -4,6 +4,7 @@ import { SceneManager } from "../core/SceneManager";
 import { AssetManager } from "../core/AssetManager";
 import { BackgroundMusicManager } from "../managers/BackgroundMusicManager";
 import { Button } from "../ui/Button";
+import { IconButton } from "../ui/IconButton";
 
 /**
  * 패배 화면 씬
@@ -14,6 +15,7 @@ export class LoseScene extends BaseScene {
   private assetManager: AssetManager;
   private loseType: "CAUGHT" | "TIME";
   private restartButton: Button | null = null;
+  private creditsButton: IconButton | null = null;
 
   constructor(
     p5Instance: p5,
@@ -47,6 +49,23 @@ export class LoseScene extends BaseScene {
         bgColor: this.p.color(70, 130, 180), // 파란색
         hoverColor: this.p.color(100, 160, 210), // 밝은 파란색
         textSize: 28,
+      }
+    );
+
+    // 크레딧 아이콘 버튼 생성 (우측 상단)
+    this.creditsButton = new IconButton(
+      this.p,
+      this.p.width - 40,
+      40,
+      50,
+      "ⓘ",
+      () => {
+        this.sceneManager.switchTo("CREDITS");
+      },
+      {
+        bgColor: this.p.color(255, 255, 255, 150),
+        hoverColor: this.p.color(255, 255, 255, 230),
+        iconColor: this.p.color(0),
       }
     );
   }
@@ -85,8 +104,16 @@ export class LoseScene extends BaseScene {
       this.restartButton.draw();
     }
 
+    // 크레딧 아이콘 버튼 그리기
+    if (this.creditsButton) {
+      this.creditsButton.draw();
+    }
+
     // 커서 초기화
-    if (this.restartButton && !this.restartButton.getIsHovered()) {
+    const anyHovered =
+      (this.restartButton && this.restartButton.getIsHovered()) ||
+      (this.creditsButton && this.creditsButton.getIsHovered());
+    if (!anyHovered) {
       this.p.cursor(this.p.ARROW);
     }
   }
@@ -99,6 +126,9 @@ export class LoseScene extends BaseScene {
     // 버튼 클릭 처리
     if (this.restartButton) {
       this.restartButton.handleClick();
+    }
+    if (this.creditsButton) {
+      this.creditsButton.handleClick();
     }
   }
 

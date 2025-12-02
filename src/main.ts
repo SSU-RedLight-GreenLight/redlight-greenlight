@@ -8,6 +8,7 @@ import { StartScene } from "./scenes/StartScene";
 import { PlayingScene } from "./scenes/PlayingScene";
 import { WinScene } from "./scenes/WinScene";
 import { LoseScene } from "./scenes/LoseScene";
+import { CreditsScene } from "./scenes/CreditsScene";
 
 // p5.js의 Friendly Error System 비활성화 (성능 향상 및 에러 방지)
 (window as any).p5 = p5;
@@ -114,6 +115,10 @@ const sketch = (p: p5) => {
     sceneManager.addScene(
       "LOSE_TIME",
       new LoseScene(p, sceneManager, bgMusicManager, "TIME")
+    );
+    sceneManager.addScene(
+      "CREDITS",
+      new CreditsScene(p, sceneManager, bgMusicManager)
     );
 
     // 시작 씬으로 전환

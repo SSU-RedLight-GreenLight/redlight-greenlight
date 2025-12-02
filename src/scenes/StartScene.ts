@@ -4,6 +4,7 @@ import { SceneManager } from "../core/SceneManager";
 import { AssetManager } from "../core/AssetManager";
 import { BackgroundMusicManager } from "../managers/BackgroundMusicManager";
 import { Button } from "../ui/Button";
+import { IconButton } from "../ui/IconButton";
 
 /**
  * 시작 화면 씬
@@ -13,6 +14,7 @@ export class StartScene extends BaseScene {
   private bgMusicManager: BackgroundMusicManager;
   private assetManager: AssetManager;
   private startButton: Button | null = null;
+  private creditsButton: IconButton | null = null;
 
   constructor(
     p5Instance: p5,
@@ -44,6 +46,23 @@ export class StartScene extends BaseScene {
         bgColor: this.p.color(34, 139, 34), // 초록색
         hoverColor: this.p.color(50, 205, 50), // 밝은 초록색
         textSize: 28,
+      }
+    );
+
+    // 크레딧 아이콘 버튼 생성 (우측 상단)
+    this.creditsButton = new IconButton(
+      this.p,
+      this.p.width - 40,
+      40,
+      50,
+      "ⓘ",
+      () => {
+        this.sceneManager.switchTo("CREDITS");
+      },
+      {
+        bgColor: this.p.color(255, 255, 255, 150),
+        hoverColor: this.p.color(255, 255, 255, 230),
+        iconColor: this.p.color(0),
       }
     );
   }
@@ -86,6 +105,11 @@ export class StartScene extends BaseScene {
       this.startButton.draw();
     }
 
+    // 크레딧 아이콘 버튼 그리기
+    if (this.creditsButton) {
+      this.creditsButton.draw();
+    }
+
     // 음악이 아직 재생되지 않았다면 클릭 안내 표시
     if (!this.bgMusicManager.getIsInitialized()) {
       this.p.textSize(16);
@@ -98,7 +122,10 @@ export class StartScene extends BaseScene {
     }
 
     // 커서 초기화 (버튼이 호버되지 않으면 기본 커서)
-    if (this.startButton && !this.startButton.getIsHovered()) {
+    const anyHovered =
+      (this.startButton && this.startButton.getIsHovered()) ||
+      (this.creditsButton && this.creditsButton.getIsHovered());
+    if (!anyHovered) {
       this.p.cursor(this.p.ARROW);
     }
   }
@@ -116,6 +143,9 @@ export class StartScene extends BaseScene {
     // 버튼 클릭 처리
     if (this.startButton) {
       this.startButton.handleClick();
+    }
+    if (this.creditsButton) {
+      this.creditsButton.handleClick();
     }
   }
 
