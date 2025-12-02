@@ -3,6 +3,7 @@ import { BaseScene } from "../core/Scene";
 import { SceneManager } from "../core/SceneManager";
 import { AssetManager } from "../core/AssetManager";
 import { BackgroundMusicManager } from "../managers/BackgroundMusicManager";
+import { Button } from "../ui/Button";
 
 /**
  * 승리 화면 씬
@@ -11,6 +12,7 @@ export class WinScene extends BaseScene {
   private sceneManager: SceneManager;
   private bgMusicManager: BackgroundMusicManager;
   private assetManager: AssetManager;
+  private restartButton: Button | null = null;
 
   constructor(
     p5Instance: p5,
@@ -26,6 +28,24 @@ export class WinScene extends BaseScene {
   init(): void {
     console.log("🎬 승리 화면 초기화");
     this.bgMusicManager.playMusicForScene("WIN");
+
+    // 다시 하기 버튼 생성
+    this.restartButton = new Button(
+      this.p,
+      this.p.width / 2,
+      this.p.height / 2 + 80,
+      200,
+      60,
+      "다시 하기",
+      () => {
+        this.sceneManager.switchTo("START");
+      },
+      {
+        bgColor: this.p.color(70, 130, 180), // 파란색
+        hoverColor: this.p.color(100, 160, 210), // 밝은 파란색
+        textSize: 28,
+      }
+    );
   }
 
   update(): void {
@@ -52,15 +72,25 @@ export class WinScene extends BaseScene {
     this.p.textAlign(this.p.CENTER, this.p.CENTER);
     this.p.text("성공!", this.p.width / 2, this.p.height / 2 - 50);
 
-    // 재시작 안내
-    this.p.textSize(24);
-    this.p.text("스페이스바를 눌러 다시 시작", this.p.width / 2, this.p.height / 2 + 50);
+    // 다시 하기 버튼 그리기
+    if (this.restartButton) {
+      this.restartButton.draw();
+    }
+
+    // 커서 초기화
+    if (this.restartButton && !this.restartButton.getIsHovered()) {
+      this.p.cursor(this.p.ARROW);
+    }
   }
 
   keyPressed(): void {
-    // 스페이스바로 재시작
-    if (this.p.keyCode === 32) {
-      this.sceneManager.switchTo("START");
+    // 키보드 입력은 더 이상 사용하지 않음 (버튼으로 대체)
+  }
+
+  mousePressed(): void {
+    // 버튼 클릭 처리
+    if (this.restartButton) {
+      this.restartButton.handleClick();
     }
   }
 

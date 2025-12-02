@@ -14,7 +14,7 @@ export interface GameData {
  */
 export class GameState {
   private static instance: GameState;
-  
+
   public data: GameData = {
     distance: 50.0,
     timeLeft: 60,

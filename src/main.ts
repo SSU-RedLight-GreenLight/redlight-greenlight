@@ -106,10 +106,7 @@ const sketch = (p: p5) => {
         bgMusicManager
       )
     );
-    sceneManager.addScene(
-      "WIN",
-      new WinScene(p, sceneManager, bgMusicManager)
-    );
+    sceneManager.addScene("WIN", new WinScene(p, sceneManager, bgMusicManager));
     sceneManager.addScene(
       "LOSE_CAUGHT",
       new LoseScene(p, sceneManager, bgMusicManager, "CAUGHT")

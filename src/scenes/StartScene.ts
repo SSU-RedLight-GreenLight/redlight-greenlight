@@ -3,6 +3,7 @@ import { BaseScene } from "../core/Scene";
 import { SceneManager } from "../core/SceneManager";
 import { AssetManager } from "../core/AssetManager";
 import { BackgroundMusicManager } from "../managers/BackgroundMusicManager";
+import { Button } from "../ui/Button";
 
 /**
  * 시작 화면 씬
@@ -11,6 +12,7 @@ export class StartScene extends BaseScene {
   private sceneManager: SceneManager;
   private bgMusicManager: BackgroundMusicManager;
   private assetManager: AssetManager;
+  private startButton: Button | null = null;
 
   constructor(
     p5Instance: p5,
@@ -26,6 +28,24 @@ export class StartScene extends BaseScene {
   init(): void {
     console.log("🎬 시작 화면 초기화");
     this.bgMusicManager.playMusicForScene("START");
+
+    // 시작 버튼 생성
+    this.startButton = new Button(
+      this.p,
+      this.p.width / 2,
+      this.p.height / 2 + 80,
+      200,
+      60,
+      "게임 시작",
+      () => {
+        this.sceneManager.switchTo("PLAYING");
+      },
+      {
+        bgColor: this.p.color(34, 139, 34), // 초록색
+        hoverColor: this.p.color(50, 205, 50), // 밝은 초록색
+        textSize: 28,
+      }
+    );
   }
 
   update(): void {
@@ -50,35 +70,52 @@ export class StartScene extends BaseScene {
     this.p.fill(255);
     this.p.textSize(48);
     this.p.textAlign(this.p.CENTER, this.p.CENTER);
-    this.p.text("무궁화 꽃이 피었습니다", this.p.width / 2, this.p.height / 2 - 50);
+    this.p.text(
+      "무궁화 꽃이 피었습니다",
+      this.p.width / 2,
+      this.p.height / 2 - 50
+    );
 
     // 안내 문구
-    this.p.textSize(24);
-    this.p.text("스페이스바를 눌러 시작하세요", this.p.width / 2, this.p.height / 2 + 50);
+    this.p.textSize(20);
+    this.p.fill(200);
+    // this.p.text("스페이스바를 눌러 이동하세요", this.p.width / 2, this.p.height / 2 + 20);
+
+    // 시작 버튼 그리기
+    if (this.startButton) {
+      this.startButton.draw();
+    }
 
     // 음악이 아직 재생되지 않았다면 클릭 안내 표시
     if (!this.bgMusicManager.getIsInitialized()) {
-      this.p.textSize(18);
+      this.p.textSize(16);
       this.p.fill(255, 255, 0);
       this.p.text(
         "(화면을 클릭하면 음악이 재생됩니다)",
         this.p.width / 2,
-        this.p.height / 2 + 100
+        this.p.height - 30
       );
+    }
+
+    // 커서 초기화 (버튼이 호버되지 않으면 기본 커서)
+    if (this.startButton && !this.startButton.getIsHovered()) {
+      this.p.cursor(this.p.ARROW);
     }
   }
 
   keyPressed(): void {
-    // 스페이스바로 게임 시작
-    if (this.p.keyCode === 32) {
-      this.sceneManager.switchTo("PLAYING");
-    }
+    // 키보드 입력은 더 이상 사용하지 않음 (버튼으로 대체)
   }
 
   mousePressed(): void {
     // 첫 클릭 시 음악 초기화
     if (!this.bgMusicManager.getIsInitialized()) {
       this.bgMusicManager.playMusicForScene("START");
+    }
+
+    // 버튼 클릭 처리
+    if (this.startButton) {
+      this.startButton.handleClick();
     }
   }
 

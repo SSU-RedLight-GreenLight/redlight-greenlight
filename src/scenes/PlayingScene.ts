@@ -43,7 +43,7 @@ export class PlayingScene extends BaseScene {
 
   init(): void {
     console.log("🎬 게임 진행 화면 초기화");
-    
+
     // 게임 상태 초기화
     this.gameState.reset();
     this.gameState.lastSecondUpdate = this.p.millis();
@@ -183,7 +183,11 @@ export class PlayingScene extends BaseScene {
     if (this.gameState.data.subtitle) {
       this.p.textAlign(this.p.CENTER, this.p.CENTER);
       this.p.textSize(32);
-      this.p.text(this.gameState.data.subtitle, this.p.width / 2, this.p.height - 80);
+      this.p.text(
+        this.gameState.data.subtitle,
+        this.p.width / 2,
+        this.p.height - 80
+      );
     }
   }
 
