@@ -353,18 +353,24 @@ const sketch = (p: p5) => {
     {
       id: "1ju",
       name: "1주차",
-      voicePath: "assets/voice_1ju.m4a",
-      greenSpritePath: "assets/human_thum.png",
-      redSpritePaths: ["assets/1ju_1.png", "assets/1ju_2.png"],
+      voicePath: "assets/sound/sound_pf_1ju_1.mp3",
+      greenSpritePath: "assets/pf/pf_back_no_bg.png",
+      redSpritePaths: ["assets/pf/pf_1ju_no_bg.png"],
     },
-    // 🎨 새로운 술래를 추가하려면 여기에 추가하세요!
-    // {
-    //   id: "professor",
-    //   name: "교수님",
-    //   voicePath: "assets/voice_professor.m4a",
-    //   greenSpritePath: "assets/professor_back.png",
-    //   redSpritePaths: ["assets/professor_front1.png", "assets/professor_front2.png", "assets/professor_front3.png"],
-    // },
+    {
+      id: "kc",
+      name: "KC",
+      voicePath: "assets/sound/sound_pf_kc_1.mp3", // kc는 음성 4개 중 1개 사용 (필요시 랜덤 선택 가능)
+      greenSpritePath: "assets/pf/pf_back_no_bg.png",
+      redSpritePaths: ["assets/pf/pf_kc_no_bg.png"],
+    },
+    {
+      id: "jw",
+      name: "JW",
+      voicePath: "assets/sound/sound_pf_jw_1.mp3",
+      greenSpritePath: "assets/pf/pf_back_no_bg.png",
+      redSpritePaths: ["assets/pf/pf_jw_no_bg.png"],
+    },
   ];
 
   /* =================================
@@ -562,7 +568,11 @@ const sketch = (p: p5) => {
     if (bgMusicManager && !bgMusicManager.getIsInitialized()) {
       p.textSize(18);
       p.fill(255, 255, 0);
-      p.text("(화면을 클릭하면 음악이 재생됩니다)", p.width / 2, p.height / 2 + 100);
+      p.text(
+        "(화면을 클릭하면 음악이 재생됩니다)",
+        p.width / 2,
+        p.height / 2 + 100
+      );
     }
   }
 
