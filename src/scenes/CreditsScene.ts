@@ -10,7 +10,6 @@ import { Button } from "../ui/Button";
  */
 export class CreditsScene extends BaseScene {
   private sceneManager: SceneManager;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private bgMusicManager: BackgroundMusicManager; // 향후 크레딧 음악 재생에 사용 가능
   private assetManager: AssetManager;
   private backButton: Button | null = null;
@@ -37,6 +36,8 @@ export class CreditsScene extends BaseScene {
   init(): void {
     console.log("🎬 크레딧 화면 초기화");
     this.scrollOffset = 0;
+    // (25.12.06) 미사용 변수 실제로 참조해서 TS 에러 제거
+    void this.bgMusicManager;
 
     // SSU DM 로고 이미지 로드
     this.p.loadImage(
