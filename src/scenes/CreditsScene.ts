@@ -20,6 +20,7 @@ export class CreditsScene extends BaseScene {
   private autoScrollEnabled: boolean = true; // 자동 스크롤 활성화 여부
   private lastManualScrollTime: number = 0; // 마지막 수동 스크롤 시간
   private readonly MANUAL_SCROLL_PAUSE_DURATION = 3000; // 수동 스크롤 후 자동 스크롤 재개까지 대기 시간 (ms)
+  private ssuDmLogo: p5.Image | null = null; // SSU DM 로고 이미지
 
   constructor(
     p5Instance: p5,
@@ -35,6 +36,18 @@ export class CreditsScene extends BaseScene {
   init(): void {
     console.log("🎬 크레딧 화면 초기화");
     this.scrollOffset = 0;
+
+    // SSU DM 로고 이미지 로드
+    this.p.loadImage(
+      `${import.meta.env.BASE_URL}assets/ssu_dm_logo.png`,
+      (img) => {
+        this.ssuDmLogo = img;
+        console.log("✅ SSU DM 로고 이미지 로드 성공");
+      },
+      (err) => {
+        console.error("❌ SSU DM 로고 이미지 로드 실패:", err);
+      }
+    );
 
     // 뒤로 가기 버튼 생성
     this.backButton = new Button(
@@ -95,7 +108,7 @@ export class CreditsScene extends BaseScene {
     this.p.push();
     this.p.translate(0, -this.scrollOffset);
 
-    let yPos = 80;
+    let yPos = 150;
     const leftMargin = 80;
     const lineHeight = 35;
 
@@ -104,7 +117,25 @@ export class CreditsScene extends BaseScene {
     this.p.textSize(48);
     this.p.textAlign(this.p.CENTER, this.p.CENTER);
     this.p.text("CREDITS", this.p.width / 2, yPos);
-    yPos += 80;
+    yPos += 150;
+
+    // SSU DM 로고
+    if (this.ssuDmLogo) {
+      const logoWidth = 200; // 로고 너비
+      const logoHeight =
+        (this.ssuDmLogo.height / this.ssuDmLogo.width) * logoWidth; // 비율 유지
+      this.p.imageMode(this.p.CENTER);
+      this.p.image(
+        this.ssuDmLogo,
+        this.p.width / 2,
+        yPos,
+        logoWidth,
+        logoHeight
+      );
+      yPos += logoHeight + 30; // 로고 높이 + 여백
+    } else {
+      yPos += 30; // 로고가 로드되지 않았을 경우 기본 여백
+    }
 
     // 게임 제작자
     this.p.fill(100, 200, 255); // 밝은 파란색
