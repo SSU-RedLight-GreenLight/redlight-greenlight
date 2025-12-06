@@ -9,6 +9,7 @@ export class AssetManager {
 
   // 이미지 에셋
   public imgBackground: p5.Image | undefined;
+  public ssuDmLogo: p5.Image | undefined;
 
   private constructor() {}
 
@@ -31,6 +32,22 @@ export class AssetManager {
       },
       (err) => {
         console.error("❌ 배경 이미지 로드 실패:", err);
+      }
+    );
+  }
+
+  /**
+   * SSU DM 로고 이미지 로드
+   */
+  loadSsuDmLogo(p: p5, path: string): void {
+    p.loadImage(
+      `${import.meta.env.BASE_URL}${path}`,
+      (img) => {
+        this.ssuDmLogo = img;
+        console.log("✅ SSU DM 로고 이미지 로드 성공");
+      },
+      (err) => {
+        console.error("❌ SSU DM 로고 이미지 로드 실패:", err);
       }
     );
   }

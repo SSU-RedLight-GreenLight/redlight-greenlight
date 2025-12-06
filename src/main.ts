@@ -67,6 +67,7 @@ const sketch = (p: p5) => {
     // AssetManager 초기화 및 배경 이미지 로드
     assetManager = AssetManager.getInstance();
     assetManager.loadBackgroundImage(p, BACKGROUND_IMAGE_PATH);
+    assetManager.loadSsuDmLogo(p, "assets/ssu_dm_logo.png");
 
     // 게임 상태 초기화
     gameState = GameState.getInstance();

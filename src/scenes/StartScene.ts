@@ -15,6 +15,9 @@ export class StartScene extends BaseScene {
   private assetManager: AssetManager;
   private startButton: Button | null = null;
   private creditsButton: IconButton | null = null;
+  private logoX: number = 50;
+  private logoY: number = 50;
+  private logoSize: number = 80;
 
   constructor(
     p5Instance: p5,
@@ -110,6 +113,24 @@ export class StartScene extends BaseScene {
       this.creditsButton.draw();
     }
 
+    // SSU DM 로고 그리기 (좌측 상단)
+    const ssuLogo = this.assetManager.ssuDmLogo;
+    if (ssuLogo && ssuLogo.width > 0) {
+      this.p.imageMode(this.p.CENTER);
+      this.p.image(
+        ssuLogo,
+        this.logoX,
+        this.logoY,
+        this.logoSize,
+        this.logoSize
+      );
+
+      // 로고 위에 마우스가 있으면 커서를 포인터로 변경
+      if (this.isLogoHovered()) {
+        this.p.cursor(this.p.HAND);
+      }
+    }
+
     // 음악이 아직 재생되지 않았다면 클릭 안내 표시
     if (!this.bgMusicManager.getIsInitialized()) {
       this.p.textSize(16);
@@ -121,13 +142,27 @@ export class StartScene extends BaseScene {
       );
     }
 
-    // 커서 초기화 (버튼이 호버되지 않으면 기본 커서)
+    // 커서 초기화 (버튼이나 로고가 호버되지 않으면 기본 커서)
     const anyHovered =
       (this.startButton && this.startButton.getIsHovered()) ||
-      (this.creditsButton && this.creditsButton.getIsHovered());
+      (this.creditsButton && this.creditsButton.getIsHovered()) ||
+      this.isLogoHovered();
     if (!anyHovered) {
       this.p.cursor(this.p.ARROW);
     }
+  }
+
+  /**
+   * 로고 위에 마우스가 있는지 확인
+   */
+  private isLogoHovered(): boolean {
+    const halfSize = this.logoSize / 2;
+    return (
+      this.p.mouseX >= this.logoX - halfSize &&
+      this.p.mouseX <= this.logoX + halfSize &&
+      this.p.mouseY >= this.logoY - halfSize &&
+      this.p.mouseY <= this.logoY + halfSize
+    );
   }
 
   keyPressed(): void {
@@ -138,6 +173,12 @@ export class StartScene extends BaseScene {
     // 첫 클릭 시 음악 초기화
     if (!this.bgMusicManager.getIsInitialized()) {
       this.bgMusicManager.playMusicForScene("START");
+    }
+
+    // 로고 클릭 시 미디어경영학과 홈페이지로 이동
+    if (this.isLogoHovered()) {
+      window.open("https://mediamba.ssu.ac.kr/", "_blank");
+      return;
     }
 
     // 버튼 클릭 처리
