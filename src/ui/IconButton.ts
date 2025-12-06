@@ -61,7 +61,7 @@ export class IconButton {
     this.p.fill(this.iconColor);
     this.p.textSize(this.size * 0.5);
     this.p.textAlign(this.p.CENTER, this.p.CENTER);
-    this.p.text(this.icon, this.x, this.y);
+    this.p.text(this.icon, this.x, this.y + 2);
     this.p.pop();
   }
 
@@ -85,6 +85,14 @@ export class IconButton {
     if (this.isHovered) {
       this.onClick();
     }
+  }
+
+  /**
+   * 버튼 위치 변경
+   */
+  setPosition(x: number, y: number): void {
+    this.x = x;
+    this.y = y;
   }
 
   /**

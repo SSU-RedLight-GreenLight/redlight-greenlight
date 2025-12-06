@@ -103,13 +103,18 @@ export class StartScene extends BaseScene {
     this.p.fill(200);
     // this.p.text("스페이스바를 눌러 이동하세요", this.p.width / 2, this.p.height / 2 + 20);
 
-    // 시작 버튼 그리기
+    // 시작 버튼 위치 업데이트 및 그리기
     if (this.startButton) {
+      this.startButton.setPosition(
+        this.p.width / 2,
+        this.p.height / 2 + 80
+      );
       this.startButton.draw();
     }
 
-    // 크레딧 아이콘 버튼 그리기
+    // 크레딧 아이콘 버튼 위치 업데이트 및 그리기
     if (this.creditsButton) {
+      this.creditsButton.setPosition(this.p.width - 40, 40);
       this.creditsButton.draw();
     }
 

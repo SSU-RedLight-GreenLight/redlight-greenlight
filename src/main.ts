@@ -58,7 +58,7 @@ const sketch = (p: p5) => {
    * setup: 최초 1회 설정
    * --------------------------------- */
   p.setup = () => {
-    p.createCanvas(800, 600);
+    p.createCanvas(p.windowWidth, p.windowHeight);
     p.textAlign(p.CENTER, p.CENTER);
 
     console.log("🎮 게임 초기화 시작...");
@@ -154,6 +154,10 @@ const sketch = (p: p5) => {
 
   p.mousePressed = () => {
     sceneManager.mousePressed();
+  };
+
+  p.windowResized = () => {
+    p.resizeCanvas(p.windowWidth, p.windowHeight);
   };
 };
 
