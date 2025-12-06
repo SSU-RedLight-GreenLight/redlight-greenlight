@@ -23,8 +23,8 @@ export class PlayingScene extends BaseScene {
   private readonly PROFESSOR_Y_POSITION = 0.75;
   private readonly BG_SCALE_MIN = 1.0;
   private readonly BG_SCALE_MAX = 2.5;
-  private readonly PROFESSOR_SCALE_MIN = 1.0;
-  private readonly PROFESSOR_SCALE_MAX = 1.5;
+  private readonly PROFESSOR_SCALE_MIN = 1.5;
+  private readonly PROFESSOR_SCALE_MAX = 4.0;
 
   constructor(
     p5Instance: p5,
