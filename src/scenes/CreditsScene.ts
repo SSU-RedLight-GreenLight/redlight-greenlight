@@ -10,6 +10,7 @@ import { Button } from "../ui/Button";
  */
 export class CreditsScene extends BaseScene {
   private sceneManager: SceneManager;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private bgMusicManager: BackgroundMusicManager; // 향후 크레딧 음악 재생에 사용 가능
   private assetManager: AssetManager;
   private backButton: Button | null = null;
