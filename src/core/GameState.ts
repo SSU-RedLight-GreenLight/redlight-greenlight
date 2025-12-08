@@ -6,7 +6,6 @@ export interface GameData {
   distance: number; // 남은 거리 (m)
   timeLeft: number; // 남은 시간 (초)
   isRedLight: boolean; // 빨간불(뒤돌아봄) 여부
-  subtitle: string; // 현재 자막 ("무", "무궁화...")
 }
 
 /**
@@ -19,7 +18,6 @@ export class GameState {
     distance: 50.0,
     timeLeft: 60,
     isRedLight: false,
-    subtitle: "",
   };
 
   // 게임 로직 내부 변수
@@ -44,7 +42,6 @@ export class GameState {
     this.data.distance = 50.0;
     this.data.timeLeft = 60;
     this.data.isRedLight = false;
-    this.data.subtitle = "";
 
     this.lastSecondUpdate = 0;
     this.redLightStartTime = 0;

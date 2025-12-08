@@ -19,7 +19,6 @@ let gameData = {
   distance: 50.0, // 남은 거리 (m)
   timeLeft: 60, // 남은 시간 (초)
   isRedLight: false, // 빨간불(뒤돌아봄) 여부
-  isPlayerMoving: false, // 현재 플레이어가 키를 눌렀는지
 };
 
 /* ---------------------------------

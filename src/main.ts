@@ -84,7 +84,7 @@ const sketch = (p: p5) => {
       gameState.currentPhase = "red";
       gameState.redLightStartTime = p.millis();
       gameState.data.isRedLight = true;
-      gameState.data.subtitle = "!!!";
+      // gameState.data.subtitle = "!!!";
     });
 
     // BackgroundMusicManager 초기화

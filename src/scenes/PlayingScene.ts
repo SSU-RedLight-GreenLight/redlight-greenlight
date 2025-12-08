@@ -71,7 +71,7 @@ export class PlayingScene extends BaseScene {
       if (redElapsed >= this.RED_LIGHT_DURATION) {
         this.gameState.currentPhase = "green";
         this.gameState.data.isRedLight = false;
-        this.gameState.data.subtitle = "";
+        // this.gameState.data.subtitle = "";
 
         // 랜덤으로 술래 선택 및 음성 재생 시작
         this.taggerManager.selectRandomTagger();
@@ -179,16 +179,16 @@ export class PlayingScene extends BaseScene {
     this.p.text(`거리: ${this.gameState.data.distance.toFixed(1)}m`, 20, 20);
     this.p.text(`시간: ${this.gameState.data.timeLeft}초`, 20, 50);
 
-    // 자막 표시
-    if (this.gameState.data.subtitle) {
-      this.p.textAlign(this.p.CENTER, this.p.CENTER);
-      this.p.textSize(32);
-      this.p.text(
-        this.gameState.data.subtitle,
-        this.p.width / 2,
-        this.p.height - 80
-      );
-    }
+    // // 자막 표시
+    // if (this.gameState.data.subtitle) {
+    //   this.p.textAlign(this.p.CENTER, this.p.CENTER);
+    //   this.p.textSize(32);
+    //   this.p.text(
+    //     this.gameState.data.subtitle,
+    //     this.p.width / 2,
+    //     this.p.height - 80
+    //   );
+    // }
   }
 
   keyPressed(): void {
