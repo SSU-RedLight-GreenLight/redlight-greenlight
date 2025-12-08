@@ -15,8 +15,8 @@ export class CreditsScene extends BaseScene {
   private backButton: Button | null = null;
   private scrollOffset: number = 0;
   private readonly SCROLL_SPEED = 3;
-  private readonly AUTO_SCROLL_SPEED = 0.5;
-  private readonly MAX_SCROLL = 1000; // 최대 스크롤 높이 (크레딧 전체 높이)
+  private readonly AUTO_SCROLL_SPEED = 3.5;
+  private readonly MAX_SCROLL = 1500; // 최대 스크롤 높이 (크레딧 전체 높이)
   private autoScrollEnabled: boolean = true; // 자동 스크롤 활성화 여부
   private lastManualScrollTime: number = 0; // 마지막 수동 스크롤 시간
   private readonly MANUAL_SCROLL_PAUSE_DURATION = 3000; // 수동 스크롤 후 자동 스크롤 재개까지 대기 시간 (ms)
@@ -85,9 +85,10 @@ export class CreditsScene extends BaseScene {
     if (this.autoScrollEnabled) {
       this.scrollOffset += this.AUTO_SCROLL_SPEED;
 
-      // 스크롤이 끝까지 가면 처음으로 되돌리기
-      if (this.scrollOffset > this.MAX_SCROLL) {
-        this.scrollOffset = 0;
+      // 스크롤이 끝까지 가면 멈추기
+      if (this.scrollOffset >= this.MAX_SCROLL) {
+        this.scrollOffset = this.MAX_SCROLL;
+        this.autoScrollEnabled = false; // 자동 스크롤 비활성화
       }
     }
   }
@@ -178,6 +179,22 @@ export class CreditsScene extends BaseScene {
 
     p5Features.forEach((feature) => {
       this.p.text(feature, leftMargin + 20, yPos);
+      yPos += lineHeight;
+    });
+    yPos += 50;
+
+    // AI 사용 비율
+    this.p.fill(100, 200, 255);
+    this.p.textSize(32);
+    this.p.text("AI 사용 비율", leftMargin, yPos);
+    yPos += 50;
+
+    this.p.fill(255);
+    this.p.textSize(24);
+    const aiRatio = ["AI 기여도: 80%", "개발자 기여도: 20%"];
+
+    aiRatio.forEach((item) => {
+      this.p.text(item, leftMargin + 20, yPos);
       yPos += lineHeight;
     });
     yPos += 50;
